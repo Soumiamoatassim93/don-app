@@ -2,7 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { CategoryModule } from './categories/category.module';
+import { DonModule } from './don/don.module';
+import { FavoriteModule } from './favorites/favorite.module';
+import { RequestModule } from './request/request.module';
 import { User } from './users/user.entity';
+import { Category } from './categories/category.entity';
+import { Don } from './don/don.entity';
+import { Favorite } from './favorites/favorite.entity';
+import { Request } from './request/request.entity';
 
 @Module({
   imports: [
@@ -18,12 +27,17 @@ import { User } from './users/user.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User],
+        entities: [User,Category,Don,Favorite,Request],
         synchronize: true, //  désactiver en production
       }),
     }),
 
     AuthModule,
+    UsersModule,
+    CategoryModule,
+    DonModule,
+    FavoriteModule,
+    RequestModule,
   ],
 })
 export class AppModule {}
