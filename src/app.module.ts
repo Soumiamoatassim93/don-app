@@ -12,6 +12,7 @@ import { Category } from './categories/category.entity';
 import { Don } from './don/don.entity';
 import { Favorite } from './favorites/favorite.entity';
 import { Request } from './request/request.entity';
+import { Image } from './image/image.entity';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { Request } from './request/request.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User,Category,Don,Favorite,Request],
+        entities: [User,Category,Don,Favorite,Request,Image],
         synchronize: true, //  désactiver en production
       }),
     }),

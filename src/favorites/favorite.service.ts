@@ -2,28 +2,43 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Favorite } from './favorite.entity';
+import { CreateFavoriteDto } from './dto/CreateFavoriteDto.dto';
+import { ResponseFavoriteDto } from './dto/ResponseFavoriteDto.dto';
 
 @Injectable()
 export class FavoriteService {
-
   constructor(
     @InjectRepository(Favorite)
     private favRepo: Repository<Favorite>,
   ) {}
 
-  add(userId: number, donationId: number) {
-    const fav = this.favRepo.create({
-      userId,
-      donationId,
-    });
-    return this.favRepo.save(fav);
+  // Convertit l'entité Favorite en ResponseFavoriteDto
+  private toResponse(fav: Favorite): ResponseFavoriteDto {
+    return {
+      id: fav.id,
+      userId: fav.userId,
+      donationId: fav.donationId,
+    };
   }
 
-  findUserFavorites(userId: number) {
-    return this.favRepo.find({ where: { userId } });
+  // ✅ AJOUTER FAVORI
+  async add(data: CreateFavoriteDto): Promise<ResponseFavoriteDto> {
+    const fav = this.favRepo.create(data);
+    const saved = await this.favRepo.save(fav);
+    return this.toResponse(saved);
   }
 
-  remove(userId: number, donationId: number) {
-    return this.favRepo.delete({ userId, donationId });
+  // ✅ TROUVER FAVORIS D'UN UTILISATEUR
+  async findUserFavorites(userId: number): Promise<ResponseFavoriteDto[]> {
+    const favs = await this.favRepo.find({ where: { userId } });
+    return favs.map(f => this.toResponse(f));
   }
-}
+  
+  async delete(id: number): Promise<ResponseFavoriteDto | null> {
+    const favorite = await this.favRepo.findOne({ where: { id } });
+    if (!favorite) return null; // si le favori n'existe pas
+    await this.favRepo.delete(id);
+    return this.toResponse(favorite); // retourne l'objet supprimé
+  }
+
+  }

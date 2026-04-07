@@ -1,39 +1,46 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards } from '@nestjs/common';
 import { DonService } from './don.service';
-import { Don } from './don.entity';
+import { CreateDonDto } from './dto/CreateDonDto.dto';
+import { UpdateDonDto } from './dto/UpdateDonDto.dto';
+import { ResponseDonDto } from './dto/ResponseDonDto.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-@Controller('dons')
-@UseGuards(AuthGuard('jwt'), RolesGuard) // applique JWT + guard des rôles
-@Roles('user') // Seul le rôle "user" peut accéder
-export class DonController {
 
+@Controller('dons')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles('user')
+export class DonController {
   constructor(private readonly donService: DonService) {}
 
   @Post()
-  create(@Body() data: Partial<Don>) {
+  create(@Body() data: CreateDonDto): Promise<ResponseDonDto> {
     return this.donService.create(data);
   }
 
   @Get()
-  findAll() {
+  findAll(): Promise<ResponseDonDto[]> {
     return this.donService.findAll();
   }
 
   @Get('available')
-  findAvailable() {
+  findAvailable(): Promise<ResponseDonDto[]> {
     return this.donService.findAvailable();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id') id: number): Promise<ResponseDonDto> {
     return this.donService.findOne(id);
   }
 
   @Put(':id/taken')
-  markAsTaken(@Param('id') id: number) {
+  markAsTaken(@Param('id') id: number): Promise<ResponseDonDto> {
     return this.donService.markAsTaken(id);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: number, @Body() data: UpdateDonDto): Promise<ResponseDonDto> {
+    return this.donService.update(id, data);
   }
 
   @Delete(':id')

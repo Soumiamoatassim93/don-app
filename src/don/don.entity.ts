@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
-
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Image } from '../image/image.entity';
 @Entity('dons')
 export class Don {
   
@@ -15,8 +15,8 @@ export class Don {
   @Column()
   categoryId: number;
 
-  @Column({ nullable: true })
-  image: string;
+  @OneToMany(() => Image, image => image.don, { cascade: true })
+  images: Image[];
 
   @Column('decimal', { precision: 10, scale: 8 })
   latitude: number;
