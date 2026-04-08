@@ -1,7 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber ,IsArray} from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateDonDto {
-
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -10,23 +10,31 @@ export class CreateDonDto {
   @IsNotEmpty()
   description: string;
 
+  @Type(() => Number)
   @IsNumber()
   categoryId: number;
 
-  @IsArray()
-  @IsOptional()
-  images?: string[];
-
+  @Type(() => Number)
   @IsNumber()
   latitude: number;
 
+  @Type(() => Number)
   @IsNumber()
   longitude: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  userId: number;
 
   @IsOptional()
   @IsString()
   status?: string;
 
-  @IsNumber()
-  userId: number;
+  @IsOptional()
+  @IsString()
+  condition?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
 }

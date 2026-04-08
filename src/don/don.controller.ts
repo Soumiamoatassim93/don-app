@@ -1,11 +1,28 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards, UseInterceptors, UploadedFiles, Req } from '@nestjs/common';
 import { DonService } from './don.service';
-import { CreateDonDto } from './dto/CreateDonDto.dto';
 import { UpdateDonDto } from './dto/UpdateDonDto.dto';
 import { ResponseDonDto } from './dto/ResponseDonDto.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { Request } from 'express';
+
+const uploadDir = join(process.cwd(), 'uploads');
+if (!existsSync(uploadDir)) {
+  mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = diskStorage({
+  destination: uploadDir,
+  filename: (_req, file, cb) => {
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, unique + extname(file.originalname));
+  },
+});
 
 @Controller('dons')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -14,8 +31,15 @@ export class DonController {
   constructor(private readonly donService: DonService) {}
 
   @Post()
-  create(@Body() data: CreateDonDto): Promise<ResponseDonDto> {
-    return this.donService.create(data);
+  @UseInterceptors(FilesInterceptor('images', 10, { storage }))
+  create(
+    @Req() req: Request,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const dto = req.body;
+    console.log('BODY via req:', dto);
+    console.log('FILES:', files);
+    return this.donService.create(dto, files ?? []);
   }
 
   @Get()
@@ -39,8 +63,14 @@ export class DonController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() data: UpdateDonDto): Promise<ResponseDonDto> {
-    return this.donService.update(id, data);
+  @UseInterceptors(FilesInterceptor('images', 10, { storage }))
+  update(
+    @Req() req: Request,
+    @Param('id') id: number,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const dto = req.body;
+    return this.donService.update(id, dto, files ?? []);
   }
 
   @Delete(':id')

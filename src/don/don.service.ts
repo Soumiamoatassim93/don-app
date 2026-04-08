@@ -6,6 +6,7 @@ import { CreateDonDto } from './dto/CreateDonDto.dto';
 import { UpdateDonDto } from './dto/UpdateDonDto.dto';
 import { ResponseDonDto } from './dto/ResponseDonDto.dto';
 import { Image } from '../image/image.entity';
+
 @Injectable()
 export class DonService {
   constructor(
@@ -21,99 +22,96 @@ export class DonService {
       categoryId: don.categoryId,
       userId: don.userId,
       status: don.status,
+      condition: don.condition,
+      address: don.address ?? undefined,
       latitude: don.latitude,
       longitude: don.longitude,
       createdAt: don.createdAt,
-      images: don.images?.map(img => ({ id: img.id, url: img.url })) || [],
+      images: don.images?.map(img => ({
+        id: img.id,
+        url: `/uploads/${img.filename}`,
+      })) || [],
     };
   }
 
-  // ✅ CREATE
-  async create(data: CreateDonDto): Promise<ResponseDonDto> {
+  async create(data: CreateDonDto, files: Express.Multer.File[]): Promise<ResponseDonDto> {
+    console.log('DATA dans service:', data);
+    console.log('FILES dans service:', files);
+  
     const don = this.donRepo.create({
       title: data.title,
       description: data.description,
-      categoryId: data.categoryId,
-      userId: data.userId,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      images: data.images?.map(url => {
+      categoryId: Number(data.categoryId),
+      userId: Number(data.userId),
+      latitude: Number(data.latitude),
+      longitude: Number(data.longitude),
+      condition: data.condition ?? 'nouveau',
+      address: data.address ?? undefined,
+      images: files.map(file => {
         const img = new Image();
-        img.url = url;
+        img.filename = file.filename;
         return img;
-      }) || [],
+      }),
     });
-
-    const saved = await this.donRepo.save(don);
-    return this.toResponse(saved);
+    return this.toResponse(await this.donRepo.save(don));
   }
 
-  // ✅ UPDATE
-  async update(id: number, data: UpdateDonDto): Promise<ResponseDonDto> {
+  async update(id: number, data: UpdateDonDto, files: Express.Multer.File[]): Promise<ResponseDonDto> {
     const don = await this.donRepo.findOne({ where: { id }, relations: ['images'] });
     if (!don) throw new Error('Don non trouvé');
 
-    // Champs simples
     don.title = data.title ?? don.title;
     don.description = data.description ?? don.description;
-    don.categoryId = data.categoryId ?? don.categoryId;
-    don.latitude = data.latitude ?? don.latitude;
-    don.longitude = data.longitude ?? don.longitude;
+    don.categoryId = data.categoryId ? Number(data.categoryId) : don.categoryId;
+    don.latitude = data.latitude ? Number(data.latitude) : don.latitude;
+    don.longitude = data.longitude ? Number(data.longitude) : don.longitude;
     don.status = data.status ?? don.status;
+    don.condition = data.condition ?? don.condition;
+    don.address = data.address ?? don.address;
 
-    // Supprimer les images demandées
-    if (data.imagesToRemove && data.imagesToRemove.length > 0) {
+    if (data.imagesToRemove?.length) {
       don.images = don.images.filter(img => !data.imagesToRemove!.includes(img.id));
     }
 
-    // Ajouter de nouvelles images
-    if (data.images && data.images.length > 0) {
-      const newImages: Image[] = data.images.map(url => {
+    if (files.length > 0) {
+      const newImages = files.map(file => {
         const img = new Image();
-        img.url = url;
+        img.filename = file.filename;
         img.don = don;
         return img;
       });
       don.images.push(...newImages);
     }
 
-    const saved = await this.donRepo.save(don);
-    return this.toResponse(saved);
+    return this.toResponse(await this.donRepo.save(don));
   }
 
-  // ✅ GET ONE
   async findOne(id: number): Promise<ResponseDonDto> {
     const don = await this.donRepo.findOne({ where: { id }, relations: ['images'] });
     if (!don) throw new Error('Don non trouvé');
     return this.toResponse(don);
   }
 
-  // ✅ GET ALL
   async findAll(): Promise<ResponseDonDto[]> {
     const dons = await this.donRepo.find({ relations: ['images'] });
     return dons.map(d => this.toResponse(d));
   }
 
-  // ✅ GET AVAILABLE
   async findAvailable(): Promise<ResponseDonDto[]> {
-    const dons = await this.donRepo.find({ 
-      where: { status: 'disponible' }, 
-      relations: ['images'] 
+    const dons = await this.donRepo.find({
+      where: { status: 'disponible' },
+      relations: ['images'],
     });
     return dons.map(d => this.toResponse(d));
   }
 
-  // ✅ MARK AS TAKEN
   async markAsTaken(id: number): Promise<ResponseDonDto> {
-    const don = await this.donRepo.findOne({ where: { id } });
+    const don = await this.donRepo.findOne({ where: { id }, relations: ['images'] });
     if (!don) throw new Error('Don non trouvé');
-
     don.status = 'pris';
-    const saved = await this.donRepo.save(don);
-    return this.toResponse(saved);
+    return this.toResponse(await this.donRepo.save(don));
   }
 
-  // ✅ DELETE
   async delete(id: number) {
     return this.donRepo.delete(id);
   }

@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { Image } from '../image/image.entity';
+
 @Entity('dons')
 export class Don {
-  
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -28,8 +28,14 @@ export class Don {
   status: string;
 
   @Column()
-  userId: number; 
+  userId: number;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ default: 'nouveau' })
+  condition: string;
+
+  @Column({ nullable: true })
+  address: string;
 }
