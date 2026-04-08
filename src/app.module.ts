@@ -13,6 +13,7 @@ import { Don } from './don/don.entity';
 import { Favorite } from './favorites/favorite.entity';
 import { Request } from './request/request.entity';
 import { Image } from './image/image.entity';
+import { TrackingModule } from './tracking/tracking.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { Image } from './image/image.entity';
     DonModule,
     FavoriteModule,
     RequestModule,
+    TrackingModule,
   ],
 })
 export class AppModule {}
