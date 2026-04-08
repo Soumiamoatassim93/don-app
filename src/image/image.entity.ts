@@ -7,7 +7,7 @@ export class Image {
   id: number;
 
   @Column()
-  url: string;
+  filename: string;
 
   @ManyToOne(() => Don, don => don.images, { onDelete: 'CASCADE' })
   don: Don;
