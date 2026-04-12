@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+// src/users/user.entity.ts
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Don } from '../don/don.entity';
 
 @Entity('users')
 export class User {
@@ -16,4 +18,8 @@ export class User {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  // ✅ Correction : La relation pointe vers la propriété 'userId' de Don
+  @OneToMany(() => Don, (don) => don.userId)
+  dons: Don[];
 }

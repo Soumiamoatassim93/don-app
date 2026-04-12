@@ -11,19 +11,30 @@ export class AuthService {
   ) {}
 
   async register(email: string, password: string) {
-    const user = await this.usersService.create(email, password);
-    return { message: 'Compte créé', userId: user.id };
-  }
+  const user = await this.usersService.create(email, password);
+  const payload = { sub: user.id, email: user.email, role: user.role };
+  const { password: _, ...userWithoutPassword } = user;
+  
+  return { 
+    access_token: this.jwtService.sign(payload),
+    user: userWithoutPassword,
+  };
+}
 
   async login(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Identifiants invalides');
-    }
-
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    return { access_token: this.jwtService.sign(payload) };
+  const user = await this.usersService.findByEmail(email);
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw new UnauthorizedException('Identifiants invalides');
   }
+
+  const payload = { sub: user.id, email: user.email, role: user.role };
+  const { password: _, ...userWithoutPassword } = user; 
+  
+  return { 
+    access_token: this.jwtService.sign(payload),
+    user: userWithoutPassword, // ✅ ajoute user dans la réponse
+  };
+}
 
   async getProfile(userId: number) {
     const user = await this.usersService.findById(userId);

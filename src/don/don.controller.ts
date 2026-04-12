@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards, UseInterceptors, UploadedFiles, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put,Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { DonService } from './don.service';
 import { UpdateDonDto } from './dto/UpdateDonDto.dto';
 import { ResponseDonDto } from './dto/ResponseDonDto.dto';
@@ -51,6 +51,19 @@ export class DonController {
   findAvailable(): Promise<ResponseDonDto[]> {
     return this.donService.findAvailable();
   }
+  // Dans don.controller.ts
+@Get('my-dons')
+async findMyDons(@Req() req): Promise<ResponseDonDto[]> {
+  console.log('=== MY-DONS ROUTE ===');
+  console.log('req.user:', req.user);
+  const userId = req.user?.id || req.user?.userId;
+  console.log('Extracted userId:', userId);
+  
+  const result = await this.donService.findByUser(userId);
+  console.log(`Returning ${result.length} dons`);
+  
+  return result;
+}
 
   @Get(':id')
   findOne(@Param('id') id: number): Promise<ResponseDonDto> {
@@ -77,4 +90,6 @@ export class DonController {
   delete(@Param('id') id: number) {
     return this.donService.delete(id);
   }
+
+  
 }
