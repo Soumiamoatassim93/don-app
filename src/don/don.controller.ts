@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Put,Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { DonService } from './don.service';
 import { UpdateDonDto } from './dto/UpdateDonDto.dto';
 import { ResponseDonDto } from './dto/ResponseDonDto.dto';
@@ -32,14 +32,13 @@ export class DonController {
 
   @Post()
   @UseInterceptors(FilesInterceptor('images', 10, { storage }))
-  create(
+  async create(
     @Req() req: Request,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const dto = req.body;
-    console.log('BODY via req:', dto);
-    console.log('FILES:', files);
-    return this.donService.create(dto, files ?? []);
+    console.log('BODY:', req.body);
+    console.log('FILES reçus:', files?.length, files?.map(f => f.filename));
+    return this.donService.create(req.body, files ?? []);
   }
 
   @Get()
@@ -51,19 +50,13 @@ export class DonController {
   findAvailable(): Promise<ResponseDonDto[]> {
     return this.donService.findAvailable();
   }
-  // Dans don.controller.ts
-@Get('my-dons')
-async findMyDons(@Req() req): Promise<ResponseDonDto[]> {
-  console.log('=== MY-DONS ROUTE ===');
-  console.log('req.user:', req.user);
-  const userId = req.user?.id || req.user?.userId;
-  console.log('Extracted userId:', userId);
-  
-  const result = await this.donService.findByUser(userId);
-  console.log(`Returning ${result.length} dons`);
-  
-  return result;
-}
+
+  @Get('my-dons')
+  @UseGuards(AuthGuard('jwt'))
+  async findMyDons(@Req() req): Promise<ResponseDonDto[]> {
+    const userId = req.user?.id || req.user?.userId;
+    return this.donService.findByUser(userId);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: number): Promise<ResponseDonDto> {
@@ -82,14 +75,13 @@ async findMyDons(@Req() req): Promise<ResponseDonDto[]> {
     @Param('id') id: number,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const dto = req.body;
-    return this.donService.update(id, dto, files ?? []);
+    return this.donService.update(id, req.body, files ?? []);
   }
 
   @Delete(':id')
   delete(@Param('id') id: number) {
+      console.log('DELETE appelé avec id:', id); // ← diagnostic
+
     return this.donService.delete(id);
   }
-
-  
 }
