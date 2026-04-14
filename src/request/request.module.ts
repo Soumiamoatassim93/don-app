@@ -4,9 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RequestController } from './request.controller';
 import { RequestService } from './request.service';
 import { Request } from './request.entity'; // ton entité Request
+import { Don } from '../don/don.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Request])], // permet d'accéder à la table 'requests'
+  imports: [TypeOrmModule.forFeature([Request,Don])], // permet d'accéder à la table 'requests'
   controllers: [RequestController],
   providers: [RequestService],
   exports: [RequestService], // si besoin d'utiliser ce service dans d'autres modules

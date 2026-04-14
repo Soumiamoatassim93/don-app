@@ -11,5 +11,7 @@ export class CreateRequestDto {
 
   @IsOptional()
   @IsEnum(RequestStatus)
-  status?: RequestStatus; // optionnel car default déjà dans entity
+  status: RequestStatus; // optionnel car default déjà dans entity
+
+  createdAt: Date; // sera défini automatiquement dans le service
 }

@@ -14,6 +14,8 @@ import { Favorite } from './favorites/favorite.entity';
 import { Request } from './request/request.entity';
 import { Image } from './image/image.entity';
 import { TrackingModule } from './tracking/tracking.module';
+import { UserLocation } from './tracking/entities/UserLocation.entity';
+
 
 @Module({
   imports: [
@@ -29,7 +31,7 @@ import { TrackingModule } from './tracking/tracking.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User,Category,Don,Favorite,Request,Image],
+        entities: [User,Category,Don,Favorite,Request,Image,UserLocation],
         synchronize: true, //  désactiver en production
       }),
     }),
