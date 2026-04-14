@@ -35,26 +35,33 @@ export class DonService {
     };
   }
 
-  // ✅ CREATE
-  async create(data: CreateDonDto, files: Express.Multer.File[]): Promise<ResponseDonDto> {
-    const don = this.donRepo.create({
-      title: data.title,
-      description: data.description,
-      categoryId: Number(data.categoryId),
-      userId: Number(data.userId),
-      latitude: Number(data.latitude),
-      longitude: Number(data.longitude),
-      condition: data.condition ?? 'nouveau',
-      address: data.address ?? undefined,
-      images: files.map(file => {
-        const img = new Image();
-        img.filename = file.filename;
-        return img;
-      }),
-    });
+async create(data: CreateDonDto, files: Express.Multer.File[]): Promise<ResponseDonDto> {
 
-    return this.toResponse(await this.donRepo.save(don));
+  // 1. créer le don
+  const don = this.donRepo.create({
+    title: data.title,
+    description: data.description,
+    categoryId: Number(data.categoryId),
+    userId: Number(data.userId),
+    latitude: Number(data.latitude),
+    longitude: Number(data.longitude),
+    condition: data.condition ?? 'nouveau',
+    address: data.address ?? undefined,
+  });
+
+  // 2. ajouter images
+  if (files && files.length > 0) {
+    don.images = files.map(file => {
+      const img = new Image();
+      img.filename = file.filename;
+      img.don = don;
+      return img;
+    });
   }
+
+  // 3. save
+  return this.toResponse(await this.donRepo.save(don));
+}
 
   // ✅ FIND BY USER
   async findByUser(userId: number): Promise<ResponseDonDto[]> {
