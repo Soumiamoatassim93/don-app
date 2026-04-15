@@ -102,7 +102,7 @@ export class DonService {
 
   // ✅ FIND ONE
   async findOne(id: number): Promise<ResponseDonDto> {
-    const don = await this.donRepo.findOne({ where: { id }, relations: ['images'] });
+    const don = await this.donRepo.findOne({ where: { id }, relations: ['images','user'] });
     if (!don) throw new Error('Don non trouvé');
     return this.toResponse(don);
   }
