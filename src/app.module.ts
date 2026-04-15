@@ -14,6 +14,8 @@ import { Favorite } from './favorites/favorite.entity';
 import { Request } from './request/request.entity';
 import { Image } from './image/image.entity';
 import { TrackingModule } from './tracking/tracking.module';
+import { UserLocation } from './tracking/entities/UserLocation.entity';
+import { NotificationsModule } from './notifications/notifications.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { Message } from './messaging/entities/message.entity';
 
@@ -43,7 +45,9 @@ import { Message } from './messaging/entities/message.entity';
     FavoriteModule,
     RequestModule,
     TrackingModule,
+    NotificationsModule,
     MessagingModule,
+
   ],
 })
 export class AppModule {}
