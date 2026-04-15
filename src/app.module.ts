@@ -16,7 +16,8 @@ import { Image } from './image/image.entity';
 import { TrackingModule } from './tracking/tracking.module';
 import { UserLocation } from './tracking/entities/UserLocation.entity';
 import { NotificationsModule } from './notifications/notifications.module';
-
+import { MessagingModule } from './messaging/messaging.module';
+import { Message } from './messaging/entities/message.entity';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { NotificationsModule } from './notifications/notifications.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User,Category,Don,Favorite,Request,Image,UserLocation],
+        entities: [User,Category,Don,Favorite,Request,Image,Message],
         synchronize: true, //  désactiver en production
       }),
     }),
@@ -45,6 +46,8 @@ import { NotificationsModule } from './notifications/notifications.module';
     RequestModule,
     TrackingModule,
     NotificationsModule,
+    MessagingModule,
+
   ],
 })
 export class AppModule {}
