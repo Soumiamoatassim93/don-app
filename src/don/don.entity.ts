@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { Image } from '../image/image.entity';
-
+import { Request } from '../request/request.entity';
 @Entity('dons')
 export class Don {
   @PrimaryGeneratedColumn()
@@ -38,4 +38,7 @@ export class Don {
 
   @Column({ nullable: true })
   address: string;
+
+  @OneToMany(() => Request, (request) => request.don)
+requests: Request[];
 }
