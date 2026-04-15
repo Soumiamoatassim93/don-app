@@ -15,6 +15,7 @@ import { Request } from './request/request.entity';
 import { Image } from './image/image.entity';
 import { TrackingModule } from './tracking/tracking.module';
 import { UserLocation } from './tracking/entities/UserLocation.entity';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 @Module({
@@ -43,6 +44,7 @@ import { UserLocation } from './tracking/entities/UserLocation.entity';
     FavoriteModule,
     RequestModule,
     TrackingModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
