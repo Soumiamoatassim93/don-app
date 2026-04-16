@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Image } from '../image/image.entity';
 import { Request } from '../request/request.entity';
+import { User } from '../users/user.entity';  // ← AJOUTE CETTE LIGNE
+
 @Entity('dons')
 export class Don {
   @PrimaryGeneratedColumn()
@@ -30,6 +32,11 @@ export class Don {
   @Column()
   userId: number;
 
+  // 🔥 AJOUTE CETTE RELATION
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -40,5 +47,5 @@ export class Don {
   address: string;
 
   @OneToMany(() => Request, (request) => request.don)
-requests: Request[];
+  requests: Request[];
 }

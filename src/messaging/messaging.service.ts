@@ -30,7 +30,15 @@ export class MessagingService {
       order: { createdAt: 'ASC' },
     });
   }
-
+async getMessagesBetween(userId: string, otherId: string): Promise<Message[]> {
+    return this.messageRepo.find({
+      where: [
+        { senderId: userId, receiverId: otherId },
+        { senderId: otherId, receiverId: userId }
+      ],
+      order: { createdAt: 'ASC' }
+    });
+  }
   async markAsRead(senderId: string, receiverId: string) {
     await this.messageRepo.update(
       { senderId, receiverId, isRead: false },
