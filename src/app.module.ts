@@ -18,6 +18,8 @@ import { UserLocation } from './tracking/entities/UserLocation.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { Message } from './messaging/entities/message.entity';
+import { Notification } from './notifications/entities/notification.entity';
+import { UserPushToken } from './notifications/entities/user-push-token.entity';
 
 @Module({
   imports: [
@@ -33,7 +35,7 @@ import { Message } from './messaging/entities/message.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User,Category,Don,Favorite,Request,Image,Message],
+        entities: [User,Category,Don,Favorite,Request,Image,Message,UserLocation,Notification,UserPushToken],
         synchronize: true, //  désactiver en production
       }),
     }),

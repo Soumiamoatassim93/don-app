@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, JoinColumn,ManyToOne } from 'typeorm';
 import { Image } from '../image/image.entity';
 import { Request } from '../request/request.entity';
-import { User } from '../users/user.entity';  // ← AJOUTE CETTE LIGNE
+import { User } from '../users/user.entity';
 
 @Entity('dons')
 export class Don {
@@ -47,5 +48,9 @@ export class Don {
   address: string;
 
   @OneToMany(() => Request, (request) => request.don)
-  requests: Request[];
+requests: Request[];
+@ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })  // Lie la colonne userId à l'utilisateur
+  user: User;  // ← Maintenant 'user' existe !
+
 }
