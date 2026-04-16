@@ -33,11 +33,7 @@ export class Don {
   @Column()
   userId: number;
 
-  // 🔥 AJOUTE CETTE RELATION
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
+  
   @CreateDateColumn()
   createdAt: Date;
 

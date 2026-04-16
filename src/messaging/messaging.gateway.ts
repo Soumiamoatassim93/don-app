@@ -12,6 +12,14 @@ import { MessagingService } from './messaging.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { WsJwtGuard } from './ws-jwt.guard';
 
+interface AuthenticatedSocket extends Socket {
+  user?: {
+    sub: number;
+    email: string;
+    role?: string;
+  };
+}
+
 @UseGuards(WsJwtGuard)
 @WebSocketGateway({
   namespace: '/messaging',
@@ -28,7 +36,7 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     private jwtService: JwtService,
   ) {}
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: AuthenticatedSocket) {
     console.log('=========================================');
     console.log('🔵 NOUVELLE CONNEXION');
     console.log(`   Client ID: ${client.id}`);
@@ -52,7 +60,7 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
         email: user.email,
       });
       
-      (client as any).user = user;
+      client.user = user;
       const userId = String(user.sub);
       
       // Rejoindre la room personnelle
@@ -78,19 +86,21 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
           console.log(`📊 Server adapter non disponible`);
         }
       } catch (err) {
-        console.log(`⚠️ Impossible de lister les rooms:`, err.message);
+        const error = err as Error;
+        console.log(`⚠️ Impossible de lister les rooms:`, error.message);
       }
       
       console.log('=========================================');
       
     } catch (error) {
-      console.log('❌ ERREUR AUTH:', error.message);
+      const err = error as Error;
+      console.log('❌ ERREUR AUTH:', err.message);
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: Socket) {
-    const user = (client as any).user;
+  handleDisconnect(client: AuthenticatedSocket) {
+    const user = client.user;
     if (user) {
       const userId = String(user.sub);
       this.connectedUsers.delete(userId);
@@ -104,12 +114,12 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('send_message')
   async handleMessage(
     @MessageBody() dto: SendMessageDto,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     console.log('=========================================');
     console.log('📨 SEND_MESSAGE reçu');
     
-    const user = (client as any).user;
+    const user = client.user;
     if (!user) {
       console.log('❌ Utilisateur non authentifié');
       return { status: 'error', message: 'Non authentifié' };
@@ -137,7 +147,8 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
         }
       }
     } catch (err) {
-      console.log(`⚠️ Impossible de vérifier les rooms:`, err.message);
+      const error = err as Error;
+      console.log(`⚠️ Impossible de vérifier les rooms:`, error.message);
     }
     
     // Sauvegarder en base de données
@@ -156,9 +167,9 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('get_conversation')
   async handleGetConversation(
     @MessageBody() data: { withUserId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    const user = (client as any).user;
+    const user = client.user;
     if (!user) {
       console.log('❌ GET_CONVERSATION: Non authentifié');
       return [];
@@ -180,9 +191,9 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage('mark_read')
   async handleMarkRead(
     @MessageBody() data: { fromUserId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    const user = (client as any).user;
+    const user = client.user;
     if (!user) return;
     
     const userId = String(user.sub);
@@ -190,5 +201,20 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     
     await this.messagingService.markAsRead(data.fromUserId, userId);
     this.server.to(data.fromUserId).emit('messages_read', { by: userId });
+  }
+
+  // Méthode utilitaire pour envoyer un message à un utilisateur spécifique
+  async sendToUser(userId: string, event: string, data: any) {
+    this.server.to(userId).emit(event, data);
+  }
+
+  // Méthode pour obtenir le nombre d'utilisateurs connectés
+  getConnectedUsersCount(): number {
+    return this.connectedUsers.size;
+  }
+
+  // Méthode pour vérifier si un utilisateur est connecté
+  isUserConnected(userId: string): boolean {
+    return this.connectedUsers.has(userId);
   }
 }
