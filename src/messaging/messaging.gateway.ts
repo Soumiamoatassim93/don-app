@@ -1,4 +1,4 @@
-// messaging.gateway.ts - Version complète qui fonctionne
+// messaging.gateway.ts
 import {
   WebSocketGateway, WebSocketServer,
   SubscribeMessage, MessageBody,
@@ -7,7 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';  // ← Ajoute
+import { JwtService } from '@nestjs/jwt';
 import { MessagingService } from './messaging.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { WsJwtGuard } from './ws-jwt.guard';
@@ -22,56 +22,82 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   @WebSocketServer()
   server: Server;
   private connectedUsers = new Map<string, string>();
+
   constructor(
     private messagingService: MessagingService,
-    private jwtService: JwtService,  // ← Injecte JwtService
+    private jwtService: JwtService,
   ) {}
 
   async handleConnection(client: Socket) {
-  console.log('🔵 Nouvelle connexion...');
-  
-  // Récupère le token
-  const token =
-    client.handshake.auth?.token ||
-    client.handshake.headers?.authorization?.replace('Bearer', '').trim();
-  
-  if (!token) {
-    console.log('❌ Pas de token, déconnexion');
-    client.disconnect();
-    return;
-  }
-  
-  try {
-    // Vérifie le token
-    const user = await this.jwtService.verifyAsync(token);
-    console.log('✅ Utilisateur vérifié:', user);
+    console.log('=========================================');
+    console.log('🔵 NOUVELLE CONNEXION');
+    console.log(`   Client ID: ${client.id}`);
+    console.log('=========================================');
     
-    // Stocke l'utilisateur
-    (client as any).user = user;
+    const token = client.handshake.auth?.token ||
+                  client.handshake.headers?.authorization?.replace('Bearer', '').trim();
     
-    // Ajoute l'utilisateur à sa room personnelle
-    const userId = String(user.sub);
-    client.join(userId);
-    this.connectedUsers.set(userId, client.id);
+    console.log(`📝 Token présent: ${!!token}`);
     
-    console.log(`✅ ${user.email} (ID: ${userId}) a rejoint la room ${userId}`);
-    try {
-      console.log(`📊 Rooms actives:`, Array.from(this.server.sockets.adapter.rooms?.keys() || []));
-    } catch (err) {
-      // Ignore l'erreur, les rooms fonctionnent quand même
+    if (!token) {
+      console.log('❌ PAS DE TOKEN - Déconnexion');
+      client.disconnect();
+      return;
     }
     
-  } catch (error) {
-    console.log('❌ Erreur auth:', error.message);
-    client.disconnect();
+    try {
+      const user = await this.jwtService.verifyAsync(token);
+      console.log('✅ USER AUTHENTIFIÉ:', {
+        id: user.sub,
+        email: user.email,
+      });
+      
+      (client as any).user = user;
+      const userId = String(user.sub);
+      
+      // Rejoindre la room personnelle
+      client.join(userId);
+      console.log(`🏠 USER ${userId} a REJOINT la room: ${userId}`);
+      
+      // Stocker l'utilisateur
+      this.connectedUsers.set(userId, client.id);
+      console.log(`📊 Utilisateurs connectés: ${this.connectedUsers.size}`);
+      
+      // AFFICHER LES ROOMS SANS ERREUR
+      try {
+        if (this.server && this.server.sockets && this.server.sockets.adapter) {
+          const rooms = this.server.sockets.adapter.rooms;
+          if (rooms) {
+            console.log(`📊 ROOMS ACTIVES:`, Array.from(rooms.keys()));
+            const roomExists = rooms.has(userId);
+            console.log(`✅ Room ${userId} existe: ${roomExists}`);
+          } else {
+            console.log(`📊 Pas de rooms disponibles pour le moment`);
+          }
+        } else {
+          console.log(`📊 Server adapter non disponible`);
+        }
+      } catch (err) {
+        console.log(`⚠️ Impossible de lister les rooms:`, err.message);
+      }
+      
+      console.log('=========================================');
+      
+    } catch (error) {
+      console.log('❌ ERREUR AUTH:', error.message);
+      client.disconnect();
+    }
   }
-}
+
   handleDisconnect(client: Socket) {
     const user = (client as any).user;
     if (user) {
       const userId = String(user.sub);
       this.connectedUsers.delete(userId);
-      console.log(`[Messaging] Déconnecté : ${userId}`);
+      console.log(`🔴 DÉCONNECTÉ: ${userId} (${user.email})`);
+      console.log(`📊 Utilisateurs restants: ${this.connectedUsers.size}`);
+    } else {
+      console.log(`🔴 DÉCONNECTÉ: Client ${client.id} (non authentifié)`);
     }
   }
 
@@ -80,19 +106,49 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() dto: SendMessageDto,
     @ConnectedSocket() client: Socket,
   ) {
+    console.log('=========================================');
+    console.log('📨 SEND_MESSAGE reçu');
+    
     const user = (client as any).user;
     if (!user) {
+      console.log('❌ Utilisateur non authentifié');
       return { status: 'error', message: 'Non authentifié' };
     }
     
     const senderId = String(user.sub);
-    console.log(`📨 Message de ${senderId} à ${dto.receiverId}: ${dto.content}`);
-    console.log(`📤 Émission à la room: ${dto.receiverId}`);
+    const receiverId = dto.receiverId;
     
+    console.log(`   De: ${senderId} (${user.email})`);
+    console.log(`   À: ${receiverId}`);
+    console.log(`   Contenu: ${dto.content}`);
+    
+    // Vérifier les rooms sans erreur
+    try {
+      if (this.server && this.server.sockets && this.server.sockets.adapter) {
+        const rooms = this.server.sockets.adapter.rooms;
+        if (rooms) {
+          const receiverRoomExists = rooms.has(receiverId);
+          console.log(`🔍 Room du destinataire ${receiverId} existe: ${receiverRoomExists}`);
+          
+          if (receiverRoomExists) {
+            const roomSize = rooms.get(receiverId)?.size || 0;
+            console.log(`👥 Clients dans room ${receiverId}: ${roomSize}`);
+          }
+        }
+      }
+    } catch (err) {
+      console.log(`⚠️ Impossible de vérifier les rooms:`, err.message);
+    }
+    
+    // Sauvegarder en base de données
     const message = await this.messagingService.saveMessage(senderId, dto);
+    console.log(`💾 Message sauvegardé - ID: ${message.id}`);
     
-    // Émet à la room du destinataire
-    this.server.to(dto.receiverId).emit('new_message', message);
+    // Émettre à la room du destinataire
+    console.log(`📤 ÉMISSION à la room: ${receiverId}`);
+    this.server.to(receiverId).emit('new_message', message);
+    console.log(`✅ Message émis avec succès`);
+    console.log('=========================================');
     
     return { status: 'sent', message };
   }
@@ -103,10 +159,22 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     @ConnectedSocket() client: Socket,
   ) {
     const user = (client as any).user;
-    if (!user) return [];
+    if (!user) {
+      console.log('❌ GET_CONVERSATION: Non authentifié');
+      return [];
+    }
     
     const userId = String(user.sub);
-    return this.messagingService.getConversation(userId, data.withUserId);
+    console.log('=========================================');
+    console.log('📥 GET_CONVERSATION');
+    console.log(`   User: ${userId} (${user.email})`);
+    console.log(`   Avec: ${data.withUserId}`);
+    
+    const messages = await this.messagingService.getMessagesBetween(userId, data.withUserId);
+    console.log(`📨 ${messages.length} messages trouvés`);
+    console.log('=========================================');
+    
+    return messages;
   }
 
   @SubscribeMessage('mark_read')
@@ -118,6 +186,8 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (!user) return;
     
     const userId = String(user.sub);
+    console.log(`👀 MARK_READ: ${data.fromUserId} -> ${userId}`);
+    
     await this.messagingService.markAsRead(data.fromUserId, userId);
     this.server.to(data.fromUserId).emit('messages_read', { by: userId });
   }
