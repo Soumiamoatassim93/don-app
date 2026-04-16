@@ -97,4 +97,28 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
       throw new WsException('Impossible de récupérer l’historique des positions du user');
     }
   }
+
+  // src/tracking/tracking.gateway.ts
+// ... dans la classe TrackingGateway
+
+// ✅ AJOUTE CETTE MÉTHODE POUR RÉCUPÉRER LA DERNIÈRE POSITION D'UN USER
+@SubscribeMessage('getUserLastLocation')
+async handleGetLastLocation(@MessageBody() data: { userId: number }) {
+  console.log(`📍 DEMANDE DERNIÈRE POSITION - User ${data.userId}`);
+  
+  try {
+    const lastLocation = await this.trackingService.getLastLocation(data.userId);
+    
+    if (lastLocation) {
+      console.log(`✅ Dernière position trouvée: (${lastLocation.latitude}, ${lastLocation.longitude})`);
+      return { status: 'success', location: lastLocation };
+    } else {
+      console.log(`⚠️ Aucune position trouvée pour user ${data.userId}`);
+      return { status: 'not_found', location: null };
+    }
+  } catch (error) {
+    console.error(`❌ Erreur getUserLastLocation:`, error);
+    throw new WsException('Impossible de récupérer la dernière position');
+  }
+}
 }
