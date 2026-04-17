@@ -1,3 +1,4 @@
+// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
@@ -10,31 +11,33 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(email: string, password: string) {
-  const user = await this.usersService.create(email, password);
-  const payload = { sub: user.id, email: user.email, role: user.role };
-  const { password: _, ...userWithoutPassword } = user;
-  
-  return { 
-    access_token: this.jwtService.sign(payload),
-    user: userWithoutPassword,
-  };
-}
+  // ✅ Ajout de nom (obligatoire) et telephone (optionnel)
+  async register(email: string, password: string, nom: string, telephone?: string) {
+    // Appel avec 3-4 arguments selon la signature de UsersService.create
+    const user = await this.usersService.create(email, password, nom, telephone);
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const { password: _, ...userWithoutPassword } = user;
 
-  async login(email: string, password: string) {
-  const user = await this.usersService.findByEmail(email);
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    throw new UnauthorizedException('Identifiants invalides');
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: userWithoutPassword,
+    };
   }
 
-  const payload = { sub: user.id, email: user.email, role: user.role };
-  const { password: _, ...userWithoutPassword } = user; 
-  
-  return { 
-    access_token: this.jwtService.sign(payload),
-    user: userWithoutPassword, // ✅ ajoute user dans la réponse
-  };
-}
+  async login(email: string, password: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: userWithoutPassword,
+    };
+  }
 
   async getProfile(userId: number) {
     const user = await this.usersService.findById(userId);
@@ -42,6 +45,6 @@ export class AuthService {
       throw new UnauthorizedException('Utilisateur non trouvé');
     }
     const { password, ...result } = user;
-    return result; // ne retourne pas le mot de passe
+    return result;
   }
 }

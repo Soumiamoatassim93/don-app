@@ -1,3 +1,4 @@
+// src/don/dto/ResponseDonDto.dto.ts
 export class ResponseDonDto {
   id: number;
   title: string;
@@ -6,9 +7,15 @@ export class ResponseDonDto {
   userId: number;
   status: string;
   condition: string;
-  address: string | null;
-  latitude: number;
-  longitude: number;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
   createdAt: Date;
   images: { id: number; url: string }[];
+  user?: {
+    id: number;
+    nom: string;
+    email: string;
+    telephone?: string;
+  };
 }

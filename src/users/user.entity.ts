@@ -19,7 +19,13 @@ export class User {
   @CreateDateColumn()
   createdAt: Date;
 
-  // ✅ Correction : La relation pointe vers la propriété 'userId' de Don
+  @Column()
+  nom: string;
+
+  // ✅ Type string | undefined (car nullable: true)
+  @Column({ nullable: true })
+  telephone?: string;
+
   @OneToMany(() => Don, (don) => don.userId)
   dons: Don[];
 }
