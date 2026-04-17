@@ -49,6 +49,7 @@ export class NotificationsService {
     if (pushToken) {
       pushToken.isActive = false;
       await this.pushTokenRepo.save(pushToken);
+      this.logger.log(`Token désactivé: ${token}`);
     }
   }
 
@@ -100,21 +101,25 @@ export class NotificationsService {
       // 4. Envoyer les notifications via Expo
       const chunks = this.expo.chunkPushNotifications(messages);
       
+      // ✅ CORRECTION : Parcourir chaque chunk
       for (const chunk of chunks) {
         try {
           const tickets: ExpoPushTicket[] = await this.expo.sendPushNotificationsAsync(chunk);
           
-          // 5. Traiter les tickets
-          for (const ticket of tickets) {
+          // ✅ CORRECTION : Utiliser l'index de la boucle
+          for (let i = 0; i < tickets.length; i++) {
+            const ticket = tickets[i];
+            const originalMessage = chunk[i];
+            
             if (ticket.status === 'error') {
-              this.logger.error(`Erreur ticket: ${ticket.message}`);
+              this.logger.error(`Erreur ticket: ${ticket.message} - Token: ${originalMessage.to}`);
+              
+              // Si le token n'est plus enregistré chez Expo, le désactiver
               if (ticket.details?.error === 'DeviceNotRegistered') {
-                // Chercher le token correspondant
-                const chunkIndex = tickets.indexOf(ticket);
-                if (chunkIndex !== -1 && messages[chunkIndex]) {
-                  await this.deactivateToken(messages[chunkIndex].to as string);
-                }
+                await this.deactivateToken(originalMessage.to as string);
               }
+            } else if (ticket.status === 'ok') {
+              this.logger.log(`✅ Notification envoyée avec succès, ID: ${ticket.id}`);
             }
           }
         } catch (error) {
