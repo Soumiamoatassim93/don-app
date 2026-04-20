@@ -17,19 +17,16 @@ export class RequestController {
     return this.requestService.create(createReqDto);
   }
 
-  // Demandes envoyées par l'utilisateur
   @Get('sent/:userId')
   findSent(@Param('userId') userId: number) {
     return this.requestService.findSent(userId);
   }
 
-  // Demandes reçues pour les dons de l'utilisateur
   @Get('received/:userId')
   findReceived(@Param('userId') userId: number) {
     return this.requestService.findReceived(userId);
   }
 
-  // Gardez cet endpoint pour compatibilité (optionnel)
   @Get('user/:userId')
   findByUser(@Param('userId') userId: number) {
     return this.requestService.findSent(userId);
